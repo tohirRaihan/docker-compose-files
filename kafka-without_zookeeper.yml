@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: kafka
+    restart: always
+    ports:
+      - "9092:9092" # Host access (IntelliJ, Postman, etc.)
+      - "9094:9094" # Internal Docker access (kafka-ui, other services)
+      - "9093:9093" # Controller listener (for KRaft mode)
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: "1"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,DOCKER://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092,DOCKER://kafka:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CLUSTER_ID: "projectName-cluster-id"
+      CLUSTER_ID: "projectName-cluster-id"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    networks:
+      - projectName-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: projectName-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9094
+    networks:
+      - projectName-net
+
+volumes:
+  kafkadata:
+
+networks:
+  projectName-net:
